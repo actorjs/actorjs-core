@@ -110,6 +110,7 @@ exports['system.actorFor child object using full path'] = function(test) {
     var system = new ActorSystem('MySystem');
     var myactor = new MyActor();
     var actorref = system.actorOf(myactor, 'top');
+    console.log(myactor.context)
     var childref = myactor.context.actorOf(MyActor, 'child');
     
     var result = system.actorFor(childref.path);

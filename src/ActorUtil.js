@@ -1,5 +1,6 @@
 var ActorUtil = {
-    newActor: function (clss, system, parent, name, options) {
+
+    newActor: function (clss, system, parent, name) {
         var actor;
 
         if (typeof clss === 'function')
@@ -13,14 +14,20 @@ var ActorUtil = {
         var ActorRef = require("./ActorRef");
         var ref = new ActorRef(actor, parent ? parent.path : system.path, name);
 
-        if (options && options.router)
-            ref = new ActorRouterRef(ref);
-
         var ActorContext = require("./ActorContext");
         var context = new ActorContext(actor, ref, system, parent);
 
+
+        actor.context = context;
+
+        actor.persist = function(msg){
+            console.log("PERSIST")
+            actor.update(msg)
+        }
+
         return ref;
     },
+
     parsePath: function (path) {
         var result = {};
         var position = path.indexOf(':');

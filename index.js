@@ -4,5 +4,5 @@ module.exports = {
     ActorSystem: require("./src/ActorSystem"),
     ActorUtil: require("./src/ActorUtil"),
     ActorMessages: require("./src/ActorMessages.js"),
-    ActorMatch: require("./src/ActorMatch.js")
+    ActorMatchers: require("./src/ActorMatchers.js")
 }
