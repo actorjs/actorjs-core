@@ -18,7 +18,7 @@ exports['TypeMatcher'] = function(test) {
         }
     };
 
-    ActorMatchers.TypeMatch(receive)(message)
+    ActorMatchers.TypeMatcher(receive)(message)
 
     test.ok(output);
     test.equal(output.hello, 'World');

@@ -1,31 +1,26 @@
 'use strict';
 
-var browserify = require('browserify');
 var gulp = require('gulp');
-var source = require('vinyl-source-stream');
-var buffer = require('vinyl-buffer');
-var gutil = require('gulp-util');
-var uglify = require('gulp-uglify');
-var sourcemaps = require('gulp-sourcemaps');
-var reactify = require('reactify');
+var webpack = require("webpack");
+var babel = require("gulp-babel");
 
-gulp.task('javascript', function () {
-    // set up the browserify instance on a task basis
-    var b = browserify({
-        entries: './index.js',
-        debug: true,
-        // defining transforms here will avoid crashing your stream
-        transform: [reactify],
-        standalone: "actorjs"
+
+var webpackConfig = require("./webpack.config");
+
+gulp.task("webpack", function(callback) {
+    var myConfig = Object.create(webpackConfig);
+    // run webpack
+    webpack(myConfig, function(err, stats) {
+        if(err) throw new gutil.PluginError("webpack:build", err);
+        gutil.log("[webpack:build]", stats.toString({
+            colors: true
+        }));
+        callback();
     });
+});
 
-    return b.bundle()
-        .pipe(source('actorjs.js'))
-        .pipe(buffer())
-        //.pipe(sourcemaps.init({loadMaps: true}))
-        // Add transformation tasks to the pipeline here.
-        //.pipe(uglify())
-        .on('error', gutil.log)
-        //.pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest('./dist'));
+gulp.task("babel", function () {
+    return gulp.src("src/app.js")
+        .pipe(babel())
+        .pipe(gulp.dest("dist"));
 });

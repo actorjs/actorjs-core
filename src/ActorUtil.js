@@ -20,10 +20,14 @@ var ActorUtil = {
 
         actor.context = context;
 
-        actor.persist = function(msg){
-            console.log("PERSIST")
-            actor.update(msg)
-        }
+        actor.persist = function(message, callback){
+            var event = {
+                path: ref.path,
+                message: message
+            };
+            system.persistenceProvider.write(event, callback);
+            actor.update(message)
+        };
 
         return ref;
     },

@@ -9,15 +9,14 @@ var ActorContext = function (actor, reference, system, parent) {
     this.self = reference;
     this.parent = parent;
     this.children = { };
-
-}
+};
 
 ActorContext.prototype.actorOf = function(clss, name, options) {
     var ActorUtil = require("./ActorUtil");
     var child = ActorUtil.newActor(clss, this.system, this.self, name, options);
     this.children[name] = child;
     return child;
-}
+};
 
 ActorContext.prototype.actorFor = function(name) {
     if (name[0] === '/')
@@ -39,8 +38,9 @@ ActorContext.prototype.actorFor = function(name) {
         name = name.substring(0, position);
         return this.children[name].context.actorFor(rest);
     }
+
     else
         return this.children[name];
-}
+};
 
 module.exports = ActorContext;

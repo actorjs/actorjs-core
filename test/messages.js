@@ -8,7 +8,9 @@ exports['TypeMessage'] = function(test) {
     });
 
     test.ok(output);
-    test.equal(output.hello, 'World');
+
+    test.equal(output.type, 'typeName');
+    test.equal(output.data.hello, 'World');
 
     test.done();
 

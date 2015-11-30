@@ -6,17 +6,20 @@ function ActorSystem(name) {
     this.path = "actor://" + name;
     this.children = { };
 
+    this.persistenceProvider = null;
+
     this.nextName = function () {
         counter++;
         return '_' + counter;
     }
-}
+};
 
 ActorSystem.prototype.actorOf = function(clss, name, options) {
+    console.log("ActorOf", this)
     var actor = ActorUtil.newActor(clss, this, null, name, options);
     this.children[name] = actor;
     return actor;
-}
+};
 
 ActorSystem.prototype.actorFor = function (name) {
     if (name.indexOf(':') > 0) {
@@ -43,6 +46,13 @@ ActorSystem.prototype.actorFor = function (name) {
     }
     else
         return this.children[name];
-}
+};
+
+ActorSystem.prototype.setPersistenceProvider = function(provider) {
+    console.log("Set Persistence Provider:",provider);
+    this.persistenceProvider = provider;
+
+    console.log("Set Persistence Provider:",this.persistenceProvider);
+};
 
 module.exports = ActorSystem;
