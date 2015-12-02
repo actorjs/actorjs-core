@@ -15,7 +15,6 @@ function ActorSystem(name) {
 };
 
 ActorSystem.prototype.actorOf = function(clss, name, options) {
-    console.log("ActorOf", this)
     var actor = ActorUtil.newActor(clss, this, null, name, options);
     this.children[name] = actor;
     return actor;
@@ -49,10 +48,7 @@ ActorSystem.prototype.actorFor = function (name) {
 };
 
 ActorSystem.prototype.setPersistenceProvider = function(provider) {
-    console.log("Set Persistence Provider:",provider);
     this.persistenceProvider = provider;
-
-    console.log("Set Persistence Provider:",this.persistenceProvider);
 };
 
 module.exports = ActorSystem;
