@@ -28,7 +28,7 @@ var actorJsCore =  actorjs.core
 ```
 
 Actors
----------------
+------
 
 Actors are defined as functions. The actor only requires a single receive function.
 
@@ -51,16 +51,21 @@ var actorRef = system.actorOf(MyActor);
 var ref = actorRef.actorOf(MyActor);
 ```
 
-Actors Messages
----------------
+Messages
+--------
+
 Messages are helper classes to generate messages in a predefined way. These messages are understood by the corresponding matchers.
 
 **Type Message**
+
 Type messages are messages with a type which can be used to match on.
+
 ```
 ActorMessages.TypeMessage(<String>, <Object>);
 ```
+
 This produces the following message
+
 ```
 {
   type: <String>
@@ -68,12 +73,14 @@ This produces the following message
 }
 ```
 
-Actors Matchers
----------------
+Matchers
+--------
 Matchers are introduced to easy match on incoming messages. There are different matchers which can be used.
 
 **Type Matcher**
+
 Type matcher assumes that the message which is send has the following structure.
+
 
 ```
 {
@@ -81,7 +88,9 @@ Type matcher assumes that the message which is send has the following structure.
   data: <Object>
 }
 ```
+
 Type Matcher can be used as follow
+
 
 ```
 ActorMessages.TypeMessage({
