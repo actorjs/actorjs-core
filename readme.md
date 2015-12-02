@@ -7,8 +7,8 @@ Description
 -----------
 
 ActorJs is a basic implementation of an actor model. The implementation is heavily based on the Akka framework.
-
 ActorJs works with nodejs as well in the browser. This makes that it easy integrate client and server.
+Javascript is not a multi threaded language and not all advantages of an actor system can leveraged. Although there are advantages of an actor system which can be use full in javascript.
 
 Installation
 ------------
