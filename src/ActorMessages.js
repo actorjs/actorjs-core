@@ -1,11 +1,10 @@
-var TypeMessage = function (type, data) {
-    return {
-        type: type,
-        data: data
-    }
-}
+var KeyValueMessage = function (key, value) {
+    var message = {}
+    message[key] = value
+    return message;
+};
 
 
 module.exports = {
-    TypeMessage: TypeMessage
+    KeyValueMessage: KeyValueMessage
 };

@@ -6,9 +6,15 @@ See Actor Model in Wikipedia.
 Description
 -----------
 
-ActorJs is a basic implementation of an actor model. The implementation is heavily based on the Akka framework.
+ActorJs is a basic implementation of an actor model. The implementation is heavily based on the [Akka](http://akka.io/). 
+
 ActorJs works with nodejs as well in the browser. This makes that it easy integrate client and server.
-Javascript is not a multi threaded language and not all advantages of an actor system can leveraged. Although there are advantages of an actor system which can be use full in javascript.
+
+Javascript is single threaded language. So why does it make sens to write an actor model in this language. Things like thread polling are not applicable for this language. Although there are advantages of an actor system which can be use full in javascript.
+
+To make your application vertical and horizontal scalable actor model can be very useful. By making use of remoting different of instances of the application can pass messages.
+
+[Event sourcing](http://martinfowler.com/eaaDev/EventSourcing.html) is another advantage which can be leveraged from the actor model. By persisting events and replay them to get back the state.  
 
 Installation
 ------------
@@ -30,7 +36,7 @@ var actorJsCore =  actorjs.core
 Actors
 ------
 
-Actors are defined as class  or as object. The actor only requires a single receive function.
+Actors are defined as class or object. The actor only requires a single receive function.
 
 Actor as class
 ```
@@ -50,7 +56,7 @@ var MyActor = {
 }
 ```
 
-An actor is instanciate by making use of the actorOf function. This function can be called on the system or on an other actor. By using the function on a actor a hierarchy of actors can be created.
+An actor is instantiate by making use of the actorOf function. This function can be called on the system or on an other actor. By using the function on a actor hierarchy of actors can be created.
 
 ```
 var system = new ActorSystem('MySystem');
@@ -63,7 +69,7 @@ var ref = actorRef.actorOf(MyActor);
 
 Sender
 ------
-To be able to send back a message to the actor that is sending access to the sending actorRef is required. To provide this actorRef an reference to the actor needs to be provided will sending a message. The following example will end up in a endless loop but to get the idea.
+Sender gives the ability to reply a message to the sending actor. To be able to send back a message to the actor a reference is needed to the sending actorRef. To provide this actorRef an reference to the actor needs to be provided will sending a message. This is done by passing it to the second argument of the tell function. The following example will end up in a endless loop but to get the idea.
 
 ```
 function SendActor(actorRef) {
@@ -80,12 +86,12 @@ function ActorReply() {
 
 var actorReplyRef = system.actorOf(new ActorReply());
 var actorSendRef = system.actorOf(new ActorSend(actorReplyRef))
-
 ```
 
 Forward
 -------
-Forwarding messages to an other actor can be do in the following way.
+Forwarding messages sends a message to the next actor but keeps the original sender. This is done by giving te sender as the second argument of the tell function. Example also end up in endless loop.
+
 ```
 function SendActor(forwardActorRef) {
     this.receive = function (message) {
@@ -115,46 +121,35 @@ Messages
 
 Messages are helper classes to generate messages in a predefined way. These messages are understood by the corresponding matchers.
 
-**Type Message**
+**Key Value Message**
 
-Type messages are messages with a type which can be used to match on.
-
+Key Value Messages are messages which hold one object with one key value pair. The KeyValueMacher is able to match on the these messages. 
 ```
-ActorMessages.TypeMessage(<String>, <Object>);
+ActorMessages.KeyValueMessage(<key>, <value>);
 ```
 
 This produces the following message
-
 ```
-{
-  type: <String>
-  data: <Object>
-}
+{ <key>: <value> }
 ```
 
 Matchers
 --------
 Matchers are introduced to easy match on incoming messages. There are different matchers which can be used.
 
-**Type Matcher**
+**Key Value Matcher**
 
-Type matcher assumes that the message which is send has the following structure.
-
-
-```
-{
-  type: <String>
-  data: <Object>
-}
-```
-
-Type Matcher can be used as follow
-
+Key Value Matcher assumes that the message which is send has the following structure.
 
 ```
-ActorMatcher.TypeMatcher({
-    <String>: function(<Object>){
-        // do something
+{ <key>: <value> }
+```
+
+Key Value Matcher can be used as follow
+```
+ActorMatcher.KeyValueMatcher({
+    <key>: function(<value>){
+        // do something wtith <value>
     }
 );
 ```
