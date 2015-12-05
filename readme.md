@@ -61,6 +61,55 @@ var actorRef = system.actorOf(MyActor);
 var ref = actorRef.actorOf(MyActor);
 ```
 
+Sender
+------
+To be able to send back a message to the actor that is sending access to the sending actorRef is required. To provide this actorRef an reference to the actor needs to be provided will sending a message. The following example will end up in a endless loop but to get the idea.
+
+```
+function SendActor(actorRef) {
+    this.receive = function (message) {
+        actorRef.tell("Hello World!", this);
+    }
+}
+
+function ActorReply() {
+    this.receive = function (message) {
+        this.sender.tell("Hello Back!")
+    }
+}
+
+var actorReplyRef = system.actorOf(new ActorReply());
+var actorSendRef = system.actorOf(new ActorSend(actorReplyRef))
+
+```
+
+Forward
+-------
+Forwarding messages to an other actor can be do in the following way.
+```
+function SendActor(forwardActorRef) {
+    this.receive = function (message) {
+        forwardActorRef.tell("Hello World!", this);
+    }
+}
+
+function ForwardActor(replyActorRef) {
+    this.receive = function (message) {
+        replyActorRef.tell(message, this.sender)
+    }
+}
+
+function ReplyActor() {
+    this.sender.tell("Hello Back!")
+}
+
+var system = new ActorSystem('my-sys');
+
+var replyActorRef = system.actorOf(new ReplyActor());
+var forwardActorRef = system.actorOf(new ForwardActor(replyActorRef));
+var sendActorRef = system.actorOf(new SendActor(forwardActorRef))
+```
+
 Messages
 --------
 
@@ -103,7 +152,7 @@ Type Matcher can be used as follow
 
 
 ```
-ActorMessages.TypeMessage({
+ActorMatcher.TypeMatcher({
     <String>: function(<Object>){
         // do something
     }
