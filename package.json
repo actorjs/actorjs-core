@@ -16,6 +16,6 @@
   },
   "scripts": {
     "start": "node index.js",
-    "test": "nodeunit test"
+    "test": "mocha test"
   }
 }

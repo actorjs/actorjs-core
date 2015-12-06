@@ -1,11 +1,6 @@
 ActorJs Core
 ============
 
-See Actor Model in Wikipedia.
-
-Description
------------
-
 ActorJs is a basic implementation of an actor model. The implementation is heavily based on the [Akka](http://akka.io/). 
 
 ActorJs works with nodejs as well in the browser. This makes that it easy integrate client and server.

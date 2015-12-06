@@ -2,7 +2,7 @@ var assert = require('assert');
 
 var ActorSystem = require('../src/ActorSystem');
 
-describe('SenderSpec', function () {
+describe('ActorSender', function () {
 
     it('should be able to send back message to sender', function (callback) {
 
