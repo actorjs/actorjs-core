@@ -15,7 +15,6 @@
     "webpack": "^1.12.9"
   },
   "scripts": {
-    "start": "node index.js",
     "test": "mocha test"
   }
 }

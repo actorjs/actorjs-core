@@ -61,12 +61,23 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	function ActorRef(actor, parentpath, name) {
 	    this.actor = actor;
 	    this.path = parentpath + "/" + name;
-	    console.log("Path: ", this.path)
 	}
 
-	ActorRef.prototype.tell = function (msg) {
+	ActorRef.prototype.tell = function (msg, sender) {
+
+
+	    this.actor.sender = {
+	        tell: function(msg){
+	            if(sender.context)
+	                sender.context.self.tell(msg)
+	            else
+	                sender.tell(msg)
+	        }
+	    };
+
 	    this.actor.receive(msg);
-	}
+	    this.actor.sender = null;
+	};
 
 	module.exports = ActorRef;
 
@@ -144,7 +155,6 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	};
 
 	ActorSystem.prototype.actorOf = function(clss, name, options) {
-	    console.log("ActorOf", this)
 	    var actor = ActorUtil.newActor(clss, this, null, name, options);
 	    this.children[name] = actor;
 	    return actor;
@@ -178,10 +188,7 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	};
 
 	ActorSystem.prototype.setPersistenceProvider = function(provider) {
-	    console.log("Set Persistence Provider:",provider);
 	    this.persistenceProvider = provider;
-
-	    console.log("Set Persistence Provider:",this.persistenceProvider);
 	};
 
 	module.exports = ActorSystem;
@@ -261,33 +268,36 @@ var actorjs = actorjs || {}; actorjs["core"] =
 /* 5 */
 /***/ function(module, exports) {
 
-	var TypeMessage = function (type, data) {
-	    return {
-	        type: type,
-	        data: data
-	    }
-	}
+	var KeyValueMessage = function (key, value) {
+	    var message = {}
+	    message[key] = value
+	    return message;
+	};
 
 
 	module.exports = {
-	    TypeMessage: TypeMessage
+	    KeyValueMessage: KeyValueMessage
 	};
 
 /***/ },
 /* 6 */
 /***/ function(module, exports) {
 
-	var TypeMatcher = function(receive){
+	var KeyValueMatcher = function(matcher){
 
 	    return function(message){
-	        if(!receive[message.type]) throw new Error("Connot typeMatch: " + message.type);
-	        receive[message.type](message.data)
+
+	        if(!Object.keys(message) && Object.keys(message)[0])
+	            throw new Error("Connot typeMatch: " + message.type);
+
+	        var key = Object.keys(message)[0];
+	        matcher[key](message[key])
 	    }
 
 	};
 
 	module.exports = {
-	    TypeMatcher: TypeMatcher
+	    KeyValueMatcher: KeyValueMatcher
 	};
 
 /***/ }
