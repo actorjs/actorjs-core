@@ -11,8 +11,8 @@
     "express": "^4.13.3",
     "gulp": "^3.9.0",
     "gulp-babel": "^6.1.1",
-    "webpack": "^1.12.9",
-    "nodeunit": ">= 0.7.4"
+    "mocha": "^2.3.4",
+    "webpack": "^1.12.9"
   },
   "scripts": {
     "start": "node index.js",
