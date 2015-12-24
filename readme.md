@@ -31,12 +31,12 @@ var actorJsCore =  actorjs.core
 Actors
 ------
 
-Actors are defined as function or as object. The actor only requires a single receive function.
+Actors are defined as an object or a function. The actor only requires a single receive function.
 
-Actor as function
+Actor as object
 ```
-function MyActor () {
-    this.receive = function(msg){
+var MyActor = {
+    receive: function(msg){
         console.log(msg)
     }
 }
@@ -44,8 +44,8 @@ function MyActor () {
 
 Actor as function
 ```
-var MyActor = {
-    receive: function(msg){
+function MyActor () {
+    this.receive = function(msg){
         console.log(msg)
     }
 }
