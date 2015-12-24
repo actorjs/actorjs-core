@@ -8,6 +8,9 @@ var ActorUtil = {
         else
             actor = clss;
 
+        if(!actor.receive)
+            throw new Error("Actor has no receive function");
+
         if (!name)
             name = system.nextName();
 

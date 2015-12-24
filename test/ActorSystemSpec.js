@@ -6,6 +6,7 @@ var ActorSystem = actorjs.ActorSystem;
 describe('ActorSystem', function () {
 
     function MyActor() {
+        this.receive = function(){};
     }
 
     it('system.actorOf using Function', function () {

@@ -5,7 +5,19 @@ var ActorSystem = actorjs.ActorSystem;
 
 describe('ActorUtilPath', function () {
 
+    it('actor with no receive function', function () {
 
+        var MyActor = {};
+        assert.throws(
+            function() {
+                var system = new ActorSystem('MySystem');
+                system.actorOf(MyActor);
+            },
+            /Actor has no receive function/
+        );
+
+
+    });
 
     it('tell simple message', function (done) {
 

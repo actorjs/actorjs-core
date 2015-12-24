@@ -6,6 +6,7 @@ var ActorSystem = actorjs.ActorSystem;
 describe('ActorContext', function () {
 
     function MyActor() {
+        this.receive = function(){};
     }
 
     it('context in actor', function () {
