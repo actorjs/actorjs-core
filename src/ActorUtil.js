@@ -20,12 +20,19 @@ var ActorUtil = {
 
         actor.context = context;
 
-        actor.persist = function(message, callback){
+        actor.persist = function (message, callback) {
             var event = {
                 path: ref.path,
                 message: message
             };
+
+            if (!system.persistenceProvider)
+                throw new Error("Persistence provider not set.");
+
             system.persistenceProvider.write(event, callback);
+
+            if(!actor.update)
+                throw new Error("Update method does not exist on actor.");
             actor.update(message)
         };
 
