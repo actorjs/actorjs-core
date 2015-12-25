@@ -23,7 +23,7 @@ var ActorUtil = {
 
         actor.context = context;
 
-        actor.persist = function (message, callback) {
+        actor.persist = function (message) {
             var event = {
                 path: ref.path,
                 message: message
@@ -32,11 +32,13 @@ var ActorUtil = {
             if (!system.persistenceProvider)
                 throw new Error("Persistence provider not set.");
 
-            system.persistenceProvider.write(event, callback);
-
             if(!actor.update)
                 throw new Error("Update method does not exist on actor.");
-            actor.update(message)
+
+            system.persistenceProvider.write(event, function(){
+                actor.update(message)
+            });
+
         };
 
         return ref;

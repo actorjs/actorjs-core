@@ -5,7 +5,7 @@ function ActorRef(actor, parentpath, name) {
 
 ActorRef.prototype.tell = function (msg, sender) {
 
-
+    // set sender on receiving actor
     this.actor.sender = {
         tell: function(msg){
             if(sender.context)
@@ -15,7 +15,7 @@ ActorRef.prototype.tell = function (msg, sender) {
         }
     };
 
-    this.actor.receive(msg);
+        this.actor.receive(msg);
     this.actor.sender = null;
 };
 
