@@ -1,6 +1,9 @@
+var ActorDecorator = require("./ActorDecorator");
+
 var ActorUtil = {
 
     newActor: function (clss, system, parent, name) {
+
         var actor;
 
         if (typeof clss === 'function')
@@ -17,31 +20,20 @@ var ActorUtil = {
         var ActorRef = require("./ActorRef");
         var ref = new ActorRef(actor, parent ? parent.path : system.path, name);
 
-        var ActorContext = require("./ActorContext");
-        var context = new ActorContext(actor, ref, system, parent);
-
-
-        actor.context = context;
-
-        actor.persist = function (message) {
-            var event = {
-                path: ref.path,
-                message: message
-            };
-
-            if (!system.persistenceProvider)
-                throw new Error("Persistence provider not set.");
-
-            if(!actor.update)
-                throw new Error("Update method does not exist on actor.");
-
-            system.persistenceProvider.write(event, function(){
-                actor.update(message)
-            });
-
-        };
+        Object.keys(ActorDecorator).forEach(function(key){
+            ActorDecorator[key].call(null, actor, ref, system, parent)
+        });
 
         return ref;
+    },
+
+    persistenceRestore: function(system, actorRef){
+        // Get messages from persistence
+        if (system.persistenceProvider)
+            system.persistenceProvider.read(actorRef.path, function (event) {
+                console.log(event);
+                actorRef.actor.update.call(actorRef.actor, event.message);
+            });
     },
 
     parsePath: function (path) {

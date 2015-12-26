@@ -50,8 +50,9 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	    ActorContext: __webpack_require__(2),
 	    ActorSystem: __webpack_require__(3),
 	    ActorUtil: __webpack_require__(4),
-	    ActorMessages: __webpack_require__(5),
-	    ActorMatchers: __webpack_require__(6)
+	    ActorMessages: __webpack_require__(6),
+	    ActorMatchers: __webpack_require__(7),
+	    ActorDecorator: __webpack_require__(5)
 	}
 
 /***/ },
@@ -65,17 +66,18 @@ var actorjs = actorjs || {}; actorjs["core"] =
 
 	ActorRef.prototype.tell = function (msg, sender) {
 
-
+	    // set sender on receiving actor
 	    this.actor.sender = {
-	        tell: function(msg){
-	            if(sender.context)
+	        tell: function (msg) {
+	            if (sender.context)
 	                sender.context.self.tell(msg)
 	            else
 	                sender.tell(msg)
 	        }
 	    };
 
-	    this.actor.receive(msg);
+	    this.actor.receive.call(this.actor, msg);
+
 	    this.actor.sender = null;
 	};
 
@@ -103,6 +105,10 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	    var ActorUtil = __webpack_require__(4);
 	    var child = ActorUtil.newActor(clss, this.system, this.self, name, options);
 	    this.children[name] = child;
+
+	    // Restore actor from persistence
+	    ActorUtil.persistenceRestore(this.system, child);
+
 	    return child;
 	};
 
@@ -144,7 +150,7 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	    var counter = 0;
 	    this.name = name;
 	    this.path = "actor://" + name;
-	    this.children = { };
+	    this.children = {};
 
 	    this.persistenceProvider = null;
 
@@ -154,10 +160,14 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	    }
 	};
 
-	ActorSystem.prototype.actorOf = function(clss, name, options) {
-	    var actor = ActorUtil.newActor(clss, this, null, name, options);
-	    this.children[name] = actor;
-	    return actor;
+	ActorSystem.prototype.actorOf = function (clss, name, options) {
+	    var actorRef = ActorUtil.newActor(clss, this, null, name, options);
+	    this.children[name] = actorRef;
+
+	    // Restore actor from persistence
+	    ActorUtil.persistenceRestore(this, actorRef);
+
+	    return actorRef;
 	};
 
 	ActorSystem.prototype.actorFor = function (name) {
@@ -165,9 +175,9 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	        var path = ActorUtil.parsePath(name);
 
 	        if (path.server) {
-	            var servername = path.server + ':' + path.port;
-	            if (servername !== this.node.name)
-	                return this.node.getNode(servername).getSystem(path.system).actorFor(path.path);
+	            var serverName = path.server + ':' + path.port;
+	            if (serverName !== this.node.name)
+	                return this.node.getNode(serverName).getSystem(path.system).actorFor(path.path);
 	        }
 
 	        name = path.path;
@@ -187,7 +197,7 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	        return this.children[name];
 	};
 
-	ActorSystem.prototype.setPersistenceProvider = function(provider) {
+	ActorSystem.prototype.setPersistenceProvider = function (provider) {
 	    this.persistenceProvider = provider;
 	};
 
@@ -197,9 +207,12 @@ var actorjs = actorjs || {}; actorjs["core"] =
 /* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var ActorDecorator = __webpack_require__(5);
+
 	var ActorUtil = {
 
 	    newActor: function (clss, system, parent, name) {
+
 	        var actor;
 
 	        if (typeof clss === 'function')
@@ -207,28 +220,29 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	        else
 	            actor = clss;
 
+	        if(!actor.receive)
+	            throw new Error("Actor has no receive function");
+
 	        if (!name)
 	            name = system.nextName();
 
 	        var ActorRef = __webpack_require__(1);
 	        var ref = new ActorRef(actor, parent ? parent.path : system.path, name);
 
-	        var ActorContext = __webpack_require__(2);
-	        var context = new ActorContext(actor, ref, system, parent);
-
-
-	        actor.context = context;
-
-	        actor.persist = function(message, callback){
-	            var event = {
-	                path: ref.path,
-	                message: message
-	            };
-	            system.persistenceProvider.write(event, callback);
-	            actor.update(message)
-	        };
+	        Object.keys(ActorDecorator).forEach(function(key){
+	            ActorDecorator[key].call(null, actor, ref, system, parent)
+	        });
 
 	        return ref;
+	    },
+
+	    persistenceRestore: function(system, actorRef){
+	        // Get messages from persistence
+	        if (system.persistenceProvider)
+	            system.persistenceProvider.read(actorRef.path, function (event) {
+	                console.log(event);
+	                actorRef.actor.update.call(actorRef.actor, event.message);
+	            });
 	    },
 
 	    parsePath: function (path) {
@@ -266,6 +280,46 @@ var actorjs = actorjs || {}; actorjs["core"] =
 
 /***/ },
 /* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var ActorDecorator = {};
+
+	ActorDecorator.context = function (actor, ref, system, parent) {
+	    var ActorContext = __webpack_require__(2);
+	    var context = new ActorContext(actor, ref, system, parent);
+	    actor.context = context;
+	};
+
+	ActorDecorator.persist = function (actor, ref, system, parent) {
+	    actor.persist = function (message) {
+	        var event = {
+	            path: ref.path,
+	            message: message
+	        };
+
+	        if (!system.persistenceProvider)
+	            throw new Error("Persistence provider not set.");
+
+	        if (!actor.update)
+	            throw new Error("Update method does not exist on actor.");
+
+	        system.persistenceProvider.write(event, function () {
+	            actor.update(message)
+	        });
+
+	    };
+	};
+
+	ActorDecorator.become = function (actor, ref, system, parent) {
+	    actor.become = function (receive) {
+	        actor.receive = receive;
+	    };
+	};
+
+	module.exports = ActorDecorator;
+
+/***/ },
+/* 6 */
 /***/ function(module, exports) {
 
 	var KeyValueMessage = function (key, value) {
@@ -280,7 +334,7 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	};
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports) {
 
 	var KeyValueMatcher = function(matcher){
@@ -288,10 +342,10 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	    return function(message){
 
 	        if(!Object.keys(message) && Object.keys(message)[0])
-	            throw new Error("Connot typeMatch: " + message.type);
+	            throw new Error("Cannot typeMatch: " + message.type);
 
 	        var key = Object.keys(message)[0];
-	        matcher[key](message[key])
+	        matcher[key].call(this, message[key]);
 	    }
 
 	};

@@ -6,7 +6,7 @@ var KeyValueMatcher = function(matcher){
             throw new Error("Cannot typeMatch: " + message.type);
 
         var key = Object.keys(message)[0];
-        matcher[key](message[key])
+        matcher[key].call(this, message[key]);
     }
 
 };

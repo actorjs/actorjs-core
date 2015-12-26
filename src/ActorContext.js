@@ -15,6 +15,10 @@ ActorContext.prototype.actorOf = function(clss, name, options) {
     var ActorUtil = require("./ActorUtil");
     var child = ActorUtil.newActor(clss, this.system, this.self, name, options);
     this.children[name] = child;
+
+    // Restore actor from persistence
+    ActorUtil.persistenceRestore(this.system, child);
+
     return child;
 };
 

@@ -4,7 +4,7 @@ function ActorSystem(name) {
     var counter = 0;
     this.name = name;
     this.path = "actor://" + name;
-    this.children = { };
+    this.children = {};
 
     this.persistenceProvider = null;
 
@@ -14,10 +14,14 @@ function ActorSystem(name) {
     }
 };
 
-ActorSystem.prototype.actorOf = function(clss, name, options) {
-    var actor = ActorUtil.newActor(clss, this, null, name, options);
-    this.children[name] = actor;
-    return actor;
+ActorSystem.prototype.actorOf = function (clss, name, options) {
+    var actorRef = ActorUtil.newActor(clss, this, null, name, options);
+    this.children[name] = actorRef;
+
+    // Restore actor from persistence
+    ActorUtil.persistenceRestore(this, actorRef);
+
+    return actorRef;
 };
 
 ActorSystem.prototype.actorFor = function (name) {
@@ -25,9 +29,9 @@ ActorSystem.prototype.actorFor = function (name) {
         var path = ActorUtil.parsePath(name);
 
         if (path.server) {
-            var servername = path.server + ':' + path.port;
-            if (servername !== this.node.name)
-                return this.node.getNode(servername).getSystem(path.system).actorFor(path.path);
+            var serverName = path.server + ':' + path.port;
+            if (serverName !== this.node.name)
+                return this.node.getNode(serverName).getSystem(path.system).actorFor(path.path);
         }
 
         name = path.path;
@@ -47,7 +51,7 @@ ActorSystem.prototype.actorFor = function (name) {
         return this.children[name];
 };
 
-ActorSystem.prototype.setPersistenceProvider = function(provider) {
+ActorSystem.prototype.setPersistenceProvider = function (provider) {
     this.persistenceProvider = provider;
 };
 

@@ -62,6 +62,34 @@ var actorRef = system.actorOf(MyActor);
 var ref = actorRef.actorOf(MyActor);
 ```
 
+Self
+------
+With self a message can be send to the actor its own inbox.
+ 
+```
+function actor () {
+ 
+  this.receive = function(msg){
+    this.context.self.tell("Hello Parent!")
+  }
+} 
+
+```
+
+Parent
+------
+With parent a message can be send to the overlying actor in the system.
+ 
+```
+function actor () {
+  
+  this.receive = function(msg){
+    this.context.parent.tell("Hello Parent!")
+  }
+} 
+
+```
+
 Sender
 ------
 Sender gives the ability to reply a message to the sending actor. To be able to send back a message to the actor a reference is needed to the sending actorRef. To provide this actorRef an reference to the actor needs to be provided will sending a message. This is done by passing it to the second argument of the tell function. The following example will end up in a endless loop but to get the idea.
