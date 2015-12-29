@@ -6,6 +6,10 @@ var KeyValueMatcher = function(matcher){
             throw new Error("Cannot typeMatch: " + message.type);
 
         var key = Object.keys(message)[0];
+
+        if(!matcher[key])
+            throw new Error("No object for key: " + key + " in actor: " + this.context.self.path);
+
         matcher[key].call(this, message[key]);
     }
 

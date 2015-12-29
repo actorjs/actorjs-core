@@ -8,21 +8,18 @@ var ActorContext = function (actor, reference, system, parent) {
     this.system = system;
     this.self = reference;
     this.parent = parent;
-    this.children = { };
+    this.children = {};
 };
 
-ActorContext.prototype.actorOf = function(clss, name, options) {
+ActorContext.prototype.actorOf = function (clss, name, options) {
     var ActorUtil = require("./ActorUtil");
     var child = ActorUtil.newActor(clss, this.system, this.self, name, options);
     this.children[name] = child;
-
-    // Restore actor from persistence
-    ActorUtil.persistenceRestore(this.system, child);
-
     return child;
 };
 
-ActorContext.prototype.actorFor = function(name) {
+ActorContext.prototype.actorFor = function (name) {
+
     if (name[0] === '/')
         return this.system.actorFor(name);
 
@@ -41,9 +38,7 @@ ActorContext.prototype.actorFor = function(name) {
         var rest = name.substring(position + 1);
         name = name.substring(0, position);
         return this.children[name].context.actorFor(rest);
-    }
-
-    else
+    } else
         return this.children[name];
 };
 

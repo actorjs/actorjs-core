@@ -3,21 +3,8 @@ function ActorRef(actor, parentpath, name) {
     this.path = parentpath + "/" + name;
 }
 
-ActorRef.prototype.tell = function (msg, sender) {
-
-    // set sender on receiving actor
-    this.actor.sender = {
-        tell: function (msg) {
-            if (sender.context)
-                sender.context.self.tell(msg)
-            else
-                sender.tell(msg)
-        }
-    };
-
-    this.actor.receive.call(this.actor, msg);
-
-    this.actor.sender = null;
+ActorRef.prototype.tell = function (message, sender) {
+    this.actor.dispatcher.dispatch(this.actor, message, sender);
 };
 
 module.exports = ActorRef;

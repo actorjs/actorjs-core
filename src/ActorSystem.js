@@ -1,4 +1,5 @@
 var ActorUtil = require("./ActorUtil");
+var ActorDispatcher = require("./ActorDispatcher");
 
 function ActorSystem(name) {
     var counter = 0;
@@ -8,19 +9,17 @@ function ActorSystem(name) {
 
     this.persistenceProvider = null;
 
+    this.dispatcher = new ActorDispatcher();
+
     this.nextName = function () {
         counter++;
         return '_' + counter;
     }
 };
 
-ActorSystem.prototype.actorOf = function (clss, name, options) {
-    var actorRef = ActorUtil.newActor(clss, this, null, name, options);
+ActorSystem.prototype.actorOf = function (clss, name) {
+    var actorRef = ActorUtil.newActor(clss, this, null, name);
     this.children[name] = actorRef;
-
-    // Restore actor from persistence
-    ActorUtil.persistenceRestore(this, actorRef);
-
     return actorRef;
 };
 

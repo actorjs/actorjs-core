@@ -11,7 +11,10 @@ var ActorUtil = {
         else
             actor = clss;
 
-        if(!actor.receive)
+        actor.dispatcher = system.dispatcher;
+        system.dispatcher.attach(actor);
+
+        if (!actor.receive)
             throw new Error("Actor has no receive function");
 
         if (!name)
@@ -20,20 +23,32 @@ var ActorUtil = {
         var ActorRef = require("./ActorRef");
         var ref = new ActorRef(actor, parent ? parent.path : system.path, name);
 
-        Object.keys(ActorDecorator).forEach(function(key){
+        Object.keys(ActorDecorator).forEach(function (key) {
             ActorDecorator[key].call(null, actor, ref, system, parent)
         });
 
+        if (actor.init)
+            actor.init();
+
+        // Restore actor from persistence
+        ActorUtil.persistenceRestore(actor, system, ref);
+
         return ref;
+
     },
 
-    persistenceRestore: function(system, actorRef){
+    persistenceRestore: function (actor, system, actorRef) {
+        console.log("Restore", actor.id);
         // Get messages from persistence
         if (system.persistenceProvider)
-            system.persistenceProvider.read(actorRef.path, function (event) {
-                console.log(event);
-                actorRef.actor.update.call(actorRef.actor, event.message);
+            system.persistenceProvider.read(actorRef.actor.id, function (events) {
+                events.forEach(function (event) {
+                    actorRef.actor.update.call(actorRef.actor, event.message);
+                });
+                actor.ready = true
             });
+        else
+            actor.ready = true
     },
 
     parsePath: function (path) {

@@ -1,6 +1,7 @@
 var KeyValueMessage = function (key, value) {
-    var message = {}
-    message[key] = value
+    var message = {};
+    if (!value) value = null;
+    message[key] = value;
     return message;
 };
 
