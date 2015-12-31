@@ -31,18 +31,18 @@ var ActorUtil = {
             actor.init();
 
         // Restore actor from persistence
-        ActorUtil.persistenceRestore(actor, system, ref);
+        ActorUtil.persistenceRestore(actor, system);
 
         return ref;
 
     },
 
-    persistenceRestore: function (actor, system, actorRef) {
+    persistenceRestore: function (actor, system) {
         // Get messages from persistence
         if (system.persistenceProvider)
             system.persistenceProvider.read(actorRef.actor.id, function (events) {
                 events.forEach(function (event) {
-                    actorRef.actor.update.call(actorRef.actor, event.message);
+                    actor.update.call(actorRef.actor, event.message);
                 });
                 actor.ready = true
             });
@@ -79,8 +79,9 @@ var ActorUtil = {
 
         return result;
     }
-}
+};
 
 module.exports = ActorUtil;
+
 ActorDecorator = require("./ActorDecorator");
 ActorRef = require("./ActorRef");
