@@ -38,7 +38,6 @@ var ActorUtil = {
     },
 
     persistenceRestore: function (actor, system, actorRef) {
-        console.log("Restore", actor.id);
         // Get messages from persistence
         if (system.persistenceProvider)
             system.persistenceProvider.read(actorRef.actor.id, function (events) {
