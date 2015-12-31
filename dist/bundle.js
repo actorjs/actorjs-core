@@ -45,38 +45,167 @@ var actorjs = actorjs || {}; actorjs["core"] =
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var ActorUtil = __webpack_require__(1)
+
 	module.exports = {
-	    ActorRef: __webpack_require__(1),
-	    ActorContext: __webpack_require__(2),
-	    ActorSystem: __webpack_require__(3),
-	    ActorUtil: __webpack_require__(4),
+	    ActorRef: __webpack_require__(7),
+	    ActorContext: __webpack_require__(3),
+	    ActorSystem: __webpack_require__(4),
+	    ActorUtil: ActorUtil,
 	    ActorMessages: __webpack_require__(8),
 	    ActorMatchers: __webpack_require__(9),
-	    ActorDecorator: __webpack_require__(5)
+	    ActorDecorator: __webpack_require__(2)
 	}
+
 
 /***/ },
 /* 1 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	function ActorRef(actor, parentpath, name) {
-	    this.actor = actor;
-	    this.path = parentpath + "/" + name;
+	var ActorDecorator;
+	var ActorRef;
+
+	var ActorUtil = {
+
+	    newActor: function (clss, system, parent, name) {
+
+	        var actor;
+
+	        if (typeof clss === 'function')
+	            actor = new clss();
+	        else
+	            actor = clss;
+
+	        actor.dispatcher = system.dispatcher;
+	        system.dispatcher.attach(actor);
+
+	        if (!actor.receive)
+	            throw new Error("Actor has no receive function");
+
+	        if (!name)
+	            name = system.nextName();
+
+	        var ref = new ActorRef(actor, parent ? parent.path : system.path, name);
+
+	        Object.keys(ActorDecorator).forEach(function (key) {
+	            ActorDecorator[key].call(null, actor, ref, system, parent)
+	        });
+
+	        if (actor.init)
+	            actor.init();
+
+	        // Restore actor from persistence
+	        ActorUtil.persistenceRestore(actor, system, ref);
+
+	        return ref;
+
+	    },
+
+	    persistenceRestore: function (actor, system, actorRef) {
+	        // Get messages from persistence
+	        if (system.persistenceProvider)
+	            system.persistenceProvider.read(actorRef.actor.id, function (events) {
+	                events.forEach(function (event) {
+	                    actorRef.actor.update.call(actorRef.actor, event.message);
+	                });
+	                actor.ready = true
+	            });
+	        else
+	            actor.ready = true
+	    },
+
+	    parsePath: function (path) {
+	        var result = {};
+	        var position = path.indexOf(':');
+
+	        result.protocol = path.substring(0, position);
+
+	        var rest = path.substring(position + 3);
+
+	        var positionat = rest.indexOf('@');
+	        position = rest.indexOf('/');
+
+	        if (positionat >= 0 && positionat < position) {
+	            result.system = rest.substring(0, positionat);
+	            result.server = rest.substring(positionat + 1, position);
+
+	            var poscolon = result.server.indexOf(':');
+
+	            if (poscolon > 0) {
+	                result.port = parseInt(result.server.substring(poscolon + 1));
+	                result.server = result.server.substring(0, poscolon);
+	            }
+	        }
+	        else
+	            result.system = rest.substring(0, position);
+
+	        result.path = rest.substring(position);
+
+	        return result;
+	    }
 	}
 
-	ActorRef.prototype.tell = function (message, sender) {
-	    this.actor.dispatcher.dispatch(this.actor, message, sender);
-	};
-
-	module.exports = ActorRef;
+	module.exports = ActorUtil;
+	ActorDecorator = __webpack_require__(2);
+	ActorRef = __webpack_require__(7);
 
 
 /***/ },
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ActorSystem = __webpack_require__(3);
+	var ActorContext = __webpack_require__(3);
+	var ActorDecorator = {};
 
+	ActorDecorator.context = function (actor, ref, system, parent) {
+	    var context = new ActorContext(actor, ref, system, parent);
+	    actor.context = context;
+	};
+
+	ActorDecorator.persist = function (actor, ref, system, parent) {
+
+	    actor.persist = function (message, callback) {
+	        var event = {
+	            id: actor.id,
+	            message: message
+	        };
+
+	        if (!system.persistenceProvider)
+	            throw new Error("Persistence provider not set.");
+
+	        if (!actor.id)
+	            throw new Error("Actor has no id");
+
+	        if (!actor.update)
+	            throw new Error("Actor has no Update method");
+
+	        system.persistenceProvider.write(event, function () {
+	            actor.update.call(actor, message);
+	            if(callback)
+	                callback.call(actor);
+	        });
+
+	    };
+	};
+
+	ActorDecorator.become = function (actor, ref, system, parent) {
+	    actor.become = function (receive) {
+	        actor.receive = receive;
+	    };
+	};
+
+	ActorDecorator.ready = function (actor, ref, system, parent) {
+	    actor.ready = false;
+	};
+
+	module.exports = ActorDecorator;
+
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var ActorSystem = __webpack_require__(4);
+	var ActorUtil = __webpack_require__(1);
 
 	var ActorContext = function (actor, reference, system, parent) {
 	    actor.context = this;
@@ -88,10 +217,13 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	    this.children = {};
 	};
 
-	ActorContext.prototype.actorOf = function (clss, name, options) {
-	    var ActorUtil = __webpack_require__(4);
+	ActorContext.prototype.actorOf = function(clss, name, options) {
 	    var child = ActorUtil.newActor(clss, this.system, this.self, name, options);
 	    this.children[name] = child;
+
+	    // Restore actor from persistence
+	    ActorUtil.persistenceRestore(this.system, child);
+
 	    return child;
 	};
 
@@ -123,11 +255,11 @@ var actorjs = actorjs || {}; actorjs["core"] =
 
 
 /***/ },
-/* 3 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ActorUtil = __webpack_require__(4);
-	var ActorDispatcher = __webpack_require__(6);
+	var ActorUtil = __webpack_require__(1);
+	var ActorDispatcher = __webpack_require__(5);
 
 	function ActorSystem(name) {
 	    var counter = 0;
@@ -185,147 +317,7 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	module.exports = ActorSystem;
 
 /***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var ActorDecorator = __webpack_require__(5);
-
-	var ActorUtil = {
-
-	    newActor: function (clss, system, parent, name) {
-
-	        var actor;
-
-	        if (typeof clss === 'function')
-	            actor = new clss();
-	        else
-	            actor = clss;
-
-	        actor.dispatcher = system.dispatcher;
-	        system.dispatcher.attach(actor);
-
-	        if (!actor.receive)
-	            throw new Error("Actor has no receive function");
-
-	        if (!name)
-	            name = system.nextName();
-
-	        var ActorRef = __webpack_require__(1);
-	        var ref = new ActorRef(actor, parent ? parent.path : system.path, name);
-
-	        Object.keys(ActorDecorator).forEach(function (key) {
-	            ActorDecorator[key].call(null, actor, ref, system, parent)
-	        });
-
-	        if (actor.init)
-	            actor.init();
-
-	        // Restore actor from persistence
-	        ActorUtil.persistenceRestore(actor, system, ref);
-
-	        return ref;
-
-	    },
-
-	    persistenceRestore: function (actor, system, actorRef) {
-	        console.log("Restore", actor.id);
-	        // Get messages from persistence
-	        if (system.persistenceProvider)
-	            system.persistenceProvider.read(actorRef.actor.id, function (events) {
-	                events.forEach(function (event) {
-	                    actorRef.actor.update.call(actorRef.actor, event.message);
-	                });
-	                actor.ready = true
-	            });
-	        else
-	            actor.ready = true
-	    },
-
-	    parsePath: function (path) {
-	        var result = {};
-	        var position = path.indexOf(':');
-
-	        result.protocol = path.substring(0, position);
-
-	        var rest = path.substring(position + 3);
-
-	        var positionat = rest.indexOf('@');
-	        position = rest.indexOf('/');
-
-	        if (positionat >= 0 && positionat < position) {
-	            result.system = rest.substring(0, positionat);
-	            result.server = rest.substring(positionat + 1, position);
-
-	            var poscolon = result.server.indexOf(':');
-
-	            if (poscolon > 0) {
-	                result.port = parseInt(result.server.substring(poscolon + 1));
-	                result.server = result.server.substring(0, poscolon);
-	            }
-	        }
-	        else
-	            result.system = rest.substring(0, position);
-
-	        result.path = rest.substring(position);
-
-	        return result;
-	    }
-	}
-
-	module.exports = ActorUtil;
-
-/***/ },
 /* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var ActorDecorator = {};
-
-	ActorDecorator.context = function (actor, ref, system, parent) {
-	    var ActorContext = __webpack_require__(2);
-	    var context = new ActorContext(actor, ref, system, parent);
-	    actor.context = context;
-	};
-
-	ActorDecorator.persist = function (actor, ref, system, parent) {
-
-	    actor.persist = function (message, callback) {
-	        var event = {
-	            id: actor.id,
-	            message: message
-	        };
-
-	        if (!system.persistenceProvider)
-	            throw new Error("Persistence provider not set.");
-
-	        if (!actor.id)
-	            throw new Error("Actor has no id");
-
-	        if (!actor.update)
-	            throw new Error("Actor has no Update method");
-
-	        system.persistenceProvider.write(event, function () {
-	            actor.update.call(actor, message);
-	            if(callback)
-	                callback.call(actor);
-	        });
-
-	    };
-	};
-
-	ActorDecorator.become = function (actor, ref, system, parent) {
-	    actor.become = function (receive) {
-	        actor.receive = receive;
-	    };
-	};
-
-	ActorDecorator.ready = function (actor, ref, system, parent) {
-	    actor.ready = false;
-	};
-
-	module.exports = ActorDecorator;
-
-/***/ },
-/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {var ActorDispatcher = function () {
@@ -348,10 +340,11 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	function process(event) {
 	    if (event.actor.ready) {
 
+	        if (event.sender && event.sender.tell)
+	            event.actor.sender = event.sender;
+
 	        if (event.sender && event.sender.context.self.tell)
 	            event.actor.sender = event.sender.context.self;
-	        else if (event.sender && event.sender.tell)
-	            event.actor.sender = event.sender;
 
 	        event.actor.receive.call(event.actor, event.message);
 
@@ -367,10 +360,10 @@ var actorjs = actorjs || {}; actorjs["core"] =
 
 	module.exports = ActorDispatcher;
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(7)))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(6)))
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports) {
 
 	// shim for using process in browser
@@ -464,6 +457,22 @@ var actorjs = actorjs || {}; actorjs["core"] =
 	    throw new Error('process.chdir is not supported');
 	};
 	process.umask = function() { return 0; };
+
+
+/***/ },
+/* 7 */
+/***/ function(module, exports) {
+
+	function ActorRef(actor, parentpath, name) {
+	    this.actor = actor;
+	    this.path = parentpath + "/" + name;
+	}
+
+	ActorRef.prototype.tell = function (message, sender) {
+	    this.actor.dispatcher.dispatch(this.actor, message, sender);
+	};
+
+	module.exports = ActorRef;
 
 
 /***/ },

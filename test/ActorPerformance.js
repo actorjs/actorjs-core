@@ -24,7 +24,8 @@ describe('ActorPerformance', function () {
         }
 
         var duration = Date.now() - start;
-        console.log('Duration:', duration);
+
+        assert.ok(duration < 500);
 
         done();
 

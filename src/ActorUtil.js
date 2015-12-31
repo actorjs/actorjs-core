@@ -1,4 +1,5 @@
-var ActorDecorator = require("./ActorDecorator");
+var ActorDecorator;
+var ActorRef;
 
 var ActorUtil = {
 
@@ -20,7 +21,6 @@ var ActorUtil = {
         if (!name)
             name = system.nextName();
 
-        var ActorRef = require("./ActorRef");
         var ref = new ActorRef(actor, parent ? parent.path : system.path, name);
 
         Object.keys(ActorDecorator).forEach(function (key) {
@@ -82,3 +82,5 @@ var ActorUtil = {
 }
 
 module.exports = ActorUtil;
+ActorDecorator = require("./ActorDecorator");
+ActorRef = require("./ActorRef");
