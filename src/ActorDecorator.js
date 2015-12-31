@@ -1,7 +1,7 @@
+var ActorContext = require("./ActorContext");
 var ActorDecorator = {};
 
 ActorDecorator.context = function (actor, ref, system, parent) {
-    var ActorContext = require("./ActorContext");
     var context = new ActorContext(actor, ref, system, parent);
     actor.context = context;
 };

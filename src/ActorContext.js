@@ -1,5 +1,5 @@
 var ActorSystem = require("./ActorSystem");
-
+var ActorUtil = require("./ActorUtil");
 
 var ActorContext = function (actor, reference, system, parent) {
     actor.context = this;
@@ -12,7 +12,6 @@ var ActorContext = function (actor, reference, system, parent) {
 };
 
 ActorContext.prototype.actorOf = function(clss, name, options) {
-    var ActorUtil = require("./ActorUtil");
     var child = ActorUtil.newActor(clss, this.system, this.self, name, options);
     this.children[name] = child;
 
