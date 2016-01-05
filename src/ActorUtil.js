@@ -31,23 +31,28 @@ var ActorUtil = {
             actor.init();
 
         // Restore actor from persistence
-        ActorUtil.persistenceRestore(actor, system);
+        ActorUtil.persistenceRestore(actor);
 
         return ref;
 
     },
 
-    persistenceRestore: function (actor, system) {
+    persistenceRestore: function (actor) {
         // Get messages from persistence
+        var system = actor.context.system;
         if (system.persistenceProvider)
-            system.persistenceProvider.read(actorRef.actor.id, function (events) {
+            system.persistenceProvider.read(actor.id, function (events) {
                 events.forEach(function (event) {
-                    actor.update.call(actorRef.actor, event.message);
+                    actor.update.call(actor, event.message);
                 });
-                actor.ready = true
+                actor.ready = true;
+                actor.preStart();
             });
-        else
-            actor.ready = true
+        else{
+            actor.ready = true;
+            actor.preStart();
+        }
+
     },
 
     parsePath: function (path) {

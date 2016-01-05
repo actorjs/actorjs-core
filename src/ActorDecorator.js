@@ -25,7 +25,7 @@ ActorDecorator.persist = function (actor, ref, system, parent) {
 
         system.persistenceProvider.write(event, function () {
             actor.update.call(actor, message);
-            if(callback)
+            if (callback)
                 callback.call(actor);
         });
 
@@ -40,6 +40,13 @@ ActorDecorator.become = function (actor, ref, system, parent) {
 
 ActorDecorator.ready = function (actor, ref, system, parent) {
     actor.ready = false;
+};
+
+ActorDecorator.startStopRestart = function (actor, ref, system, parent) {
+    if (!actor.preStart) actor.preStart = function () {};
+    if (!actor.postStop) actor.postStop = function () {};
+    if (!actor.preRestart) actor.preRestart = function () {};
+    if (!actor.postRestart) actor.postRestart = function () {};
 };
 
 module.exports = ActorDecorator;
