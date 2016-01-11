@@ -61,4 +61,27 @@ describe('ActorUtilPath', function () {
 
     });
 
+    it('should become in a different state when calling "context.become()"', function (done) {
+
+        function MyActor() {
+
+            var state1 = function(msg){
+                assert.equal("state1", msg);
+                this.context.become(state2);
+            }
+            var state2 = function(msg){
+                assert.equal("state2", msg);
+                done();
+            }
+            this.receive = state1
+        };
+
+        var system = new ActorSystem('MySystem');
+        var actorref = system.actorOf(MyActor);
+
+        actorref.tell('state1');
+        actorref.tell('state2');
+
+    });
+
 });

@@ -32,11 +32,6 @@ ActorDecorator.persist = function (actor, ref, system, parent) {
     };
 };
 
-ActorDecorator.become = function (actor, ref, system, parent) {
-    actor.become = function (receive) {
-        actor.receive = receive;
-    };
-};
 
 ActorDecorator.ready = function (actor, ref, system, parent) {
     actor.ready = false;

@@ -57,9 +57,6 @@ describe('ActorSystem', function () {
         assert.ok(actorref);
         assert.equal(typeof system, 'object');
 
-        assert.ok(myactor.self);
-        assert.ok(myactor.self === actorref);
-
         assert.ok(myactor.context);
         assert.ok(myactor.context.self);
         assert.ok(myactor.context.self === actorref);

@@ -21,7 +21,7 @@ function process(event) {
         if (event.sender && event.sender.tell)
             event.actor.sender = event.sender;
 
-        if (event.sender && event.sender.context.self.tell)
+        if (event.sender && event.sender.context && event.sender.context.self.tell)
             event.actor.sender = event.sender.context.self;
 
         event.actor.receive.call(event.actor, event.message);
@@ -30,7 +30,6 @@ function process(event) {
 
     } else {
         setTimeout(function () {
-            console.log("reprocess...");
             process(event);
         }, 500)
     }

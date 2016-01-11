@@ -44,7 +44,7 @@ ActorSystem.prototype.actorFor = function (name) {
     if (position > 0) {
         var rest = name.substring(position + 1);
         name = name.substring(0, position);
-        return this.children[name].context.actorFor(rest);
+        return this.children[name].actor.context.actorFor(rest);
     }
     else
         return this.children[name];
