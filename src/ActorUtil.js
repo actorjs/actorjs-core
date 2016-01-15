@@ -41,7 +41,7 @@ var ActorUtil = {
         // Get messages from persistence
         var system = actor.context.system;
         if (system.persistenceProvider)
-            system.persistenceProvider.read(actor.id, function (events) {
+            system.persistenceProvider.read(actor, function (events) {
                 events.forEach(function (event) {
                     actor.update.call(actor, event.message);
                 });
